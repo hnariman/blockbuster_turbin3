@@ -13,7 +13,7 @@ pub use state::*;
 declare_id!("2s1Z1cmGHjP78wz4mbMSFQLBbFgSbpyj6XzZQdzDdiN8");
 
 #[program]
-pub mod blockbuster {
+pub mod block_buster {
 
     use super::*;
 
