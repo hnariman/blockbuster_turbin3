@@ -52,4 +52,8 @@ impl<'a> Initialize<'a> {
 
         Ok(())
     }
+    pub fn lock(&mut self) ->Result<()>{
+        self.config.locked = true;
+        Ok(())
+    }
 }

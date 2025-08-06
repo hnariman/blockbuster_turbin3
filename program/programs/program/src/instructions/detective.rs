@@ -26,7 +26,7 @@ pub struct Detective<'a> {
 }
 
 impl<'a> Detective<'a> {
-    pub fn bust(&mut self) -> Result<()> {
+    pub fn bust(&mut self, _suspect: Pubkey) -> Result<()> {
         if let Some(_corruption) = &self.corrupt_detective {
             return Err(ErrorCode::SuspiciousDetective.into());
         }
@@ -36,7 +36,7 @@ impl<'a> Detective<'a> {
         Ok(())
     }
 
-    pub fn clear(&mut self) -> Result<()> {
+    pub fn clear(&mut self, _suspect: Pubkey) -> Result<()> {
         if let Some(_corruption) = &self.corrupt_detective {
             return Err(ErrorCode::SuspiciousDetective.into());
         }
