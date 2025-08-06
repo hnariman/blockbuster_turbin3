@@ -6,4 +6,6 @@ pub enum ErrorCode {
     CustomError,
     #[msg("Unable to create report")]
     SuspiciousUser,
+    #[msg("Internal affairs investigation in progress")]
+    SuspiciousDetective,
 }
