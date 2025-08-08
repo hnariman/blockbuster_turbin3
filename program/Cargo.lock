@@ -343,7 +343,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "block_buster"
+name = "blockbuster"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",

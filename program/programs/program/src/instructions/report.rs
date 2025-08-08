@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, MintTo, Token, TokenAccount},
 };
 
-use crate::{case::Case, error::ErrorCode, Config, CONF_SEED, SUSPECT_SEED};
+use crate::{case::Case, error::ErrorCode, Config, CONF_SEED, MINT_SEED, SUSPECT_SEED};
 
 #[derive(Accounts)]
 #[instruction(suspect:Pubkey)]
@@ -12,30 +12,51 @@ pub struct Report<'a> {
     #[account(mut)]
     pub user: Signer<'a>,
 
-    #[account( seeds = [CONF_SEED, config.key().as_ref()], bump = config.config_bump)]
+    #[account( 
+        seeds = [CONF_SEED, config.key().as_ref()],
+        bump = config.config_bump
+    )]
     pub config: Account<'a, Config>,
 
     #[account(
         init_if_needed,
-        payer=user,
-        space=Case::LEN,
+        payer = user,
+        space = Case::LEN,
         seeds = [SUSPECT_SEED, suspect.as_ref()],
         bump
     )]
     pub record: Account<'a, Case>,
 
     // suspicious exists if user pubkey was reported
-    #[account( seeds = [SUSPECT_SEED, user.key().as_ref()], bump, constraint = false)]
-    pub suspicious_user: Option<Account<'a, Case>>,
+    #[account( 
+        seeds = [SUSPECT_SEED, user.key().as_ref()], 
+        bump, 
+        // constraint = false
+    )]
+    // pub suspicious_user: Option<Account<'a, Case>>,
+
+    /// CHECK: by design
+    pub suspicious_user: AccountInfo<'a>,
 
     // ACCS FOR PAYMENT:
-    #[account( seeds = [b"mint", config.key().as_ref()], bump=config.mint_bump)]
+    #[account( 
+        seeds = [MINT_SEED, config.key().as_ref()], 
+        bump = config.mint_bump
+    )] 
     pub mint: Account<'a, Mint>,
 
-    #[account( mut, associated_token::mint = mint, associated_token::authority = config)]
+    #[account( 
+        mut,
+        associated_token::mint = mint,
+        associated_token::authority = config
+    )]
     pub vault: Account<'a, TokenAccount>,
 
-    #[account( mut, associated_token::mint = mint, associated_token::authority = user)]
+    #[account( 
+        mut,
+        associated_token::mint = mint,
+        associated_token::authority = user
+    )]
     pub user_ata: Account<'a, TokenAccount>,
 
     // PROGRAMS:
@@ -46,9 +67,13 @@ pub struct Report<'a> {
 
 impl<'a> Report<'a> {
     pub fn report(&mut self, suspect: Pubkey) -> Result<()> {
-        if let Some(_user_is_suspect) = &self.suspicious_user {
-            return Err(ErrorCode::SuspiciousUser.into());
-        }
+        // let existing_case =  
+        // &self.suspicious_user.lamports() > 0 && 
+        // !&self.suspicious_user.data_is_empty();
+
+        // if existing_case {
+        //     return Err(ErrorCode::SuspiciousUser.into());
+        // }
 
         let case_exists = self.record.count > 0;
 
@@ -72,11 +97,7 @@ impl<'a> Report<'a> {
             authority: self.config.to_account_info(),
         };
 
-        let seeds = &[
-            &CONF_SEED[..],
-            &self.config.seed.to_le_bytes(),
-            &[self.config.config_bump],
-        ];
+        let seeds = &[&CONF_SEED[..], &[self.config.config_bump]];
 
         let signer_seeds = &[&seeds[..]];
 

@@ -9,13 +9,24 @@ pub struct Detective<'a> {
     #[account(mut)]
     pub detective: Signer<'a>,
 
-    #[account( seeds = [CONF_SEED,config.key().as_ref()], bump = config.config_bump)]
+    #[account( 
+        seeds = [CONF_SEED,config.key().as_ref()],
+        bump = config.config_bump
+    )]
     pub config: Account<'a, Config>,
 
-    #[account( mut, seeds = [SUSPECT_SEED, suspect.key().as_ref()], bump)]
+    #[account( 
+        mut,
+        seeds = [SUSPECT_SEED, suspect.key().as_ref()],
+        bump
+    )]
     pub case: Account<'a, Case>,
 
-    #[account( seeds = [SUSPECT_SEED, suspect.key().as_ref()], bump, constraint = false)]
+    #[account( 
+        seeds = [SUSPECT_SEED, suspect.key().as_ref()],
+        bump,
+        constraint = false
+    )]
     pub corrupt_detective: Option<Account<'a, Case>>,
     // will check if it is crooked cop and resign() pubkey if so?
 

@@ -10,15 +10,15 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("2s1Z1cmGHjP78wz4mbMSFQLBbFgSbpyj6XzZQdzDdiN8");
+declare_id!("484oGzaSywdWJqTPLXSQjGPZU38YZgFuRsJCqdSq6xcY");
 
 #[program]
-pub mod block_buster {
+pub mod blockbuster {
 
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, seed: u64) -> Result<()> {
-        ctx.accounts.initialize(seed, &ctx.bumps)?;
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        ctx.accounts.initialize(&ctx.bumps)?;
         Ok(())
     }
 

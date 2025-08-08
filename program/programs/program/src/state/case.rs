@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{error::ErrorCode, MAX_REPORTS};
 
-#[derive(Debug, Clone, Copy, AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, Clone, Copy, AnchorDeserialize, AnchorSerialize, InitSpace)]
 pub enum Status {
     Suspect,
     Busted,
@@ -10,6 +10,7 @@ pub enum Status {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct Case {
     pub user: Pubkey,    // 32 bytes
     pub suspect: Pubkey, // 32 bytes
