@@ -1,3 +1,4 @@
+#![allow(unused)] // FIXME: remove & clean up when tests are done
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
