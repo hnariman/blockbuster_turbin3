@@ -1,6 +1,6 @@
 ---
-name: blockbuster
-id: blockbuster
+name: program
+id: program
 runbooks:
   - name: deployment
     description: Deploy programs

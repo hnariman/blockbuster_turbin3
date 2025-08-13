@@ -1,5 +1,5 @@
 ################################################################
-# Manage blockbuster deployment through Crypto Infrastructure as Code
+# Manage program deployment through Crypto Infrastructure as Code
 ################################################################
 
 addon "svm" {
