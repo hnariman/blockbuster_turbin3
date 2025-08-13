@@ -10,7 +10,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("484oGzaSywdWJqTPLXSQjGPZU38YZgFuRsJCqdSq6xcY");
+declare_id!("Lydq5FRq7WggPQeMjSPPDQCoeYXDCRTFrrtU79bYx8E");
 
 #[program]
 pub mod blockbuster {
@@ -22,8 +22,8 @@ pub mod blockbuster {
         Ok(())
     }
 
-    pub fn lock(ctx: Context<Initialize>, _seed: u64) -> Result<()> {
-        ctx.accounts.lock()?;
+    pub fn lock(ctx: Context<Lock>) -> Result<()> {
+        ctx.accounts.lock_toggle()?;
         Ok(())
     }
 
