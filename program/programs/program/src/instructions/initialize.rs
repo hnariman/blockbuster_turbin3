@@ -5,7 +5,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::Config;
+use crate::{Config, CONF_SEED, MINT_SEED};
 
 #[derive(Accounts)]
 pub struct Initialize<'a> {
@@ -16,7 +16,7 @@ pub struct Initialize<'a> {
         init,
         payer = admin,
         space = 8 + Config::INIT_SPACE,
-        seeds = [ b"blockbuster_config", admin.key().as_ref()],
+        seeds = [ CONF_SEED, admin.key().as_ref()],
         bump
     )]
     pub config: Account<'a, Config>,
@@ -26,7 +26,7 @@ pub struct Initialize<'a> {
         payer = admin,
         mint::decimals = 6,
         mint::authority = config,
-        seeds = [b"mint", config.key().as_ref()],
+        seeds = [MINT_SEED, config.key().as_ref()],
         bump
     )]
     pub mint: Account<'a, Mint>,
@@ -48,6 +48,7 @@ impl<'a> Initialize<'a> {
         msg!("we're in and we're testing");
 
         self.config.set_inner(Config {
+            admin: self.admin.key(),
             reward_rate: 1u64,
             mint: self.mint.key(),
             vault: self.vault.key(),
@@ -59,8 +60,8 @@ impl<'a> Initialize<'a> {
 
         Ok(())
     }
-    pub fn lock(&mut self) -> Result<()> {
-        self.config.locked = true;
-        Ok(())
-    }
+    // pub fn lock(&mut self) -> Result<()> {
+    //     self.config.locked = true;
+    //     Ok(())
+    // }
 }

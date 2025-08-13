@@ -1,4 +1,3 @@
-#![allow(unused)] // FIXME: remove & clean up when tests are done
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -14,7 +13,7 @@ pub struct Report<'a> {
     pub user: Signer<'a>,
 
     #[account( 
-        seeds = [CONF_SEED, config.key().as_ref()],
+        seeds = [CONF_SEED, config.admin.as_ref()],
         bump = config.config_bump
     )]
     pub config: Account<'a, Config>,
@@ -29,18 +28,19 @@ pub struct Report<'a> {
     pub record: Account<'a, Case>,
 
     // suspicious exists if user pubkey was reported
-    #[account( 
-        seeds = [SUSPECT_SEED, user.key().as_ref()], 
-        bump, 
-        // constraint = false
-    )]
+    // #[account( 
+    //     seeds = [SUSPECT_SEED, user.key().as_ref()], 
+    //     bump, 
+    //     constraint = false
+    // )]
     // pub suspicious_user: Option<Account<'a, Case>>,
 
     /// CHECK: by design
-    pub suspicious_user: AccountInfo<'a>,
+    // pub suspicious_user: AccountInfo<'a>,
 
     // ACCS FOR PAYMENT:
     #[account( 
+        mut,
         seeds = [MINT_SEED, config.key().as_ref()], 
         bump = config.mint_bump
     )] 
@@ -54,7 +54,8 @@ pub struct Report<'a> {
     pub vault: Account<'a, TokenAccount>,
 
     #[account( 
-        mut,
+        init_if_needed,
+        payer= user,
         associated_token::mint = mint,
         associated_token::authority = user
     )]
@@ -77,9 +78,8 @@ impl<'a> Report<'a> {
         // }
 
         let case_exists = self.record.count > 0;
-
         if case_exists {
-            self.record.update()?;
+            self.record.count = self.record.count.checked_add(1).unwrap();
         } else {
             let case = Case::new(self.user.key(), suspect)?;
             self.record.set_inner(case);
@@ -94,11 +94,15 @@ impl<'a> Report<'a> {
 
         let address = MintTo {
             mint: self.mint.to_account_info(),
-            to: self.user.to_account_info(),
+            to: self.user_ata.to_account_info(),
             authority: self.config.to_account_info(),
         };
 
-        let seeds = &[&CONF_SEED[..], &[self.config.config_bump]];
+        let seeds = &[
+            &CONF_SEED[..],
+            &self.config.admin.to_bytes()[..], 
+            &[self.config.config_bump]
+        ];
 
         let signer_seeds = &[&seeds[..]];
 
