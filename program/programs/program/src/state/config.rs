@@ -9,4 +9,10 @@ pub struct Config {
     pub locked: bool,
     pub mint_bump: u8,
     pub config_bump: u8,
+    pub admin: Pubkey,
+}
+
+
+impl Config {
+   pub const SIZE:usize = 90; 
 }
