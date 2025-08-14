@@ -37,6 +37,11 @@ pub mod blockbuster {
         Ok(())
     }
 
+    pub fn hire_detective(ctx:Context<HR>, detective: Pubkey) -> Result<()>{
+        ctx.accounts.make_detective(detective)?;
+        Ok(())
+    }
+
     pub fn clear(ctx: Context<Detective>, suspect: Pubkey) -> Result<()> {
         ctx.accounts.clear(suspect.key())?;
         Ok(())

@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, MintTo, Token, TokenAccount},
 };
 
-use crate::{case::Case, error::ErrorCode, Config, CONF_SEED, MINT_SEED, SUSPECT_SEED};
+use crate::{case::Case,Config, CONF_SEED, MINT_SEED, SUSPECT_SEED};
 
 #[derive(Accounts)]
 #[instruction(suspect:Pubkey)]

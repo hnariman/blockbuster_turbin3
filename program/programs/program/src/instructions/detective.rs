@@ -30,6 +30,8 @@ pub struct Detective<'a> {
     // pub corrupt_detective: Option<Account<'a, Case>>,
     // will check if it is crooked cop and resign() pubkey if so?
 
+
+
     // PROGRAMS:
     pub system_program: Program<'a, System>,
     pub token_program: Program<'a, Token>,
