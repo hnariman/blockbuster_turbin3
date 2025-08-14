@@ -13,6 +13,7 @@ export interface IUserAirdrop {
 export interface ReportAccounts {
   user: PublicKey, // Signer mut
   config: PublicKey, // PDA
+  suspect: PublicKey,
   record: PublicKey, // PDA
   mint: PublicKey, // Mint of reward token
   vault: PublicKey, // not sure if required, if using mintTo & mint per each request
@@ -45,6 +46,19 @@ export function setup() {
   return { program, provider, wallet }
 }
 
+async function airDrop(provider: anchor.Provider, user: PublicKey, amount: Number) {
+  const LAMPORTS_PER_SOL = 1e9;
+
+  const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash();
+
+  const signature = await provider.connection.requestAirdrop(user, (LAMPORTS_PER_SOL * +amount));
+
+  await provider.connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+
+  const balanceSOL = (await provider.connection.getAccountInfo(user)).lamports / LAMPORTS_PER_SOL;
+
+  assert.equal(balanceSOL, amount);
+}
 
 
 export async function setupInitialize() {
@@ -61,19 +75,6 @@ export async function setupInitialize() {
   return { wallet, vault, config, anchor, program, mint, provider }
 }
 
-async function airDrop(provider: anchor.Provider, user: PublicKey, amount: Number) {
-  const LAMPORTS_PER_SOL = 1e9;
-
-  const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash();
-
-  const signature = await provider.connection.requestAirdrop(user, (LAMPORTS_PER_SOL * +amount));
-
-  await provider.connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
-
-  const balanceSOL = (await provider.connection.getAccountInfo(user)).lamports / LAMPORTS_PER_SOL;
-
-  assert.equal(balanceSOL, amount);
-}
 
 export async function setupCitizen() {
   const { program, provider, wallet } = setup();
@@ -112,10 +113,56 @@ export async function setupCitizen() {
     provider,
     config,
     mint,
+    suspect,
+    record,
     vault,
     userAta,
-    suspect,
     accounts,
     user
+  }
+}
+
+
+
+export async function setupDetective() {
+  const { program, provider, wallet } = setup();
+  const detective = Keypair.generate();
+  const suspect = Keypair.generate().publicKey;
+
+  const configSeed = [Buffer.from("blockbuster_config"), wallet.publicKey.toBuffer()];
+  const config = PublicKey.findProgramAddressSync(configSeed, program.programId)[0];
+
+  const mintSeeds = [Buffer.from("blockbuster_mint"), config.toBuffer()];
+  const mint = PublicKey.findProgramAddressSync(mintSeeds, program.programId)[0];
+
+  const recordSeed = [Buffer.from("blockbuster_suspect"), suspect.toBuffer()];
+  const record = PublicKey.findProgramAddressSync(recordSeed, program.programId)[0];
+
+  const vault = getAssociatedTokenAddressSync(mint, config, true);
+  const userAta = getAssociatedTokenAddressSync(mint, detective.publicKey, true);
+
+  await airDrop(provider, detective.publicKey, 12);
+
+  const accounts: Partial<ReportAccounts & { detective: PublicKey }> = {
+    detective: detective.publicKey,
+    config,
+    mint,
+    record,
+    suspect,
+    systemProgram: SystemProgram.programId,
+    tokenProgram: TOKEN_PROGRAM_ID,
+    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
+  }
+
+  return {
+    wallet,
+    program,
+    provider,
+    config,
+    mint,
+    record,
+    suspect,
+    accounts,
+    detective
   }
 }

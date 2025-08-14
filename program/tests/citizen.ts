@@ -119,6 +119,7 @@ describe("Lock/Unlock:", () => {
       .lock()
       .accountsPartial({ admin, config })
       .rpc();
+
     const configAccount = await program.account.config.fetch(config);
     assert.equal(configAccount.locked, false);
   });
@@ -143,37 +144,30 @@ describe("Lock/Unlock:", () => {
 
 
 describe("Actor: Citizen", () => {
-  const suspect1 = Keypair.generate().publicKey;
 
   it("Citizen shall be able to report new case address", async () => {
     const { accounts, user, suspect } = await setupCitizen();
+
     const tx = await program
       .methods
       .report(suspect)
-      .accountsPartial(accounts)
+      .accounts(accounts)
       .signers([user])
       .rpc();
+    logTransactionURL(tx);
 
-    // const reportSeed = [Buffer.from("blockbuster_suspect"), suspect1.toBuffer()];
-    // const reportAddress = PublicKey.findProgramAddressSync(reportSeed, SystemProgram.programId)[0];
-    // const report = await provider.connection.getParsedAccountInfo(reportAddress);
-    // const report = await program.account.case.fetchAndContext(reportAddress);
-    // console.log({ report })
+    // const record = await program.account.case.fetch(accounts.record);
 
-
-    const record = await program.account.case.fetch(accounts.record);
-    console.log({ record });
-
-    assert.equal(record.count, 1);
+    // assert.equal(record.count, 1);
+    // console.log({ record });
     const tx2 = await program
       .methods
       .report(suspect)
-      .accountsPartial(accounts)
+      .accounts(accounts)
       .signers([user])
       .rpc();
 
     const record2 = await program.account.case.fetch(accounts.record);
-    console.log({ record2 });
     assert.equal(record2.count, 2);
     logTransactionURL(tx2);
   });

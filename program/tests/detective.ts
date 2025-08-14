@@ -7,9 +7,11 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token
 import { Program, Wallet } from "@coral-xyz/anchor";
 // project
 import { Blockbuster } from "../target/types/blockbuster";
-import { setupInitialize } from "./helpers";
+import { setupDetective, setupInitialize } from "./helpers";
 
-describe.skip("Actor: Detective", () => {
+describe("Actor: Detective", async () => {
+  const { accounts, suspect, detective } = await setupDetective();
+
   it("Detective: shall fail to update status without NFT", () => {
     throw new Error("Not Implemented");
   })
