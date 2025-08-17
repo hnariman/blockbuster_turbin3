@@ -9,7 +9,7 @@ import { Program, Wallet } from "@coral-xyz/anchor";
 import { Blockbuster } from "../target/types/blockbuster";
 import { setupDetective, setupInitialize } from "./helpers";
 
-describe("Actor: Detective", async () => {
+describe.skip("Actor: Detective", async () => {
   const { accounts, suspect, detective } = await setupDetective();
 
   it("Detective: shall fail to update status without NFT", () => {

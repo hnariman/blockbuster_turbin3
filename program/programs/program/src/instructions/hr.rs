@@ -7,10 +7,14 @@ use anchor_spl::{
     metadata::{
         mpl_token_metadata::{
             instructions::{
-                CreateMasterEditionV3Cpi, CreateMasterEditionV3CpiAccounts,
-                CreateMasterEditionV3InstructionArgs, CreateMetadataAccountV3Cpi,
-                CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs,
-                VerifyCollectionV1Cpi, VerifyCollectionV1CpiAccounts,
+                CreateMasterEditionV3Cpi, 
+                CreateMasterEditionV3CpiAccounts,
+                CreateMasterEditionV3InstructionArgs, 
+                CreateMetadataAccountV3Cpi,
+                CreateMetadataAccountV3CpiAccounts, 
+                CreateMetadataAccountV3InstructionArgs,
+                VerifyCollectionV1Cpi, 
+                VerifyCollectionV1CpiAccounts,
             },
             types::{Collection, Creator, DataV2},
         },
@@ -19,7 +23,7 @@ use anchor_spl::{
     token::{mint_to, Mint, MintTo, Token, TokenAccount},
 };
 
-use crate::{Config, CONF_SEED };
+use crate::{Config, CONF_SEED};
 
 #[derive(Accounts)]
 pub struct HR<'a> {
@@ -212,7 +216,7 @@ impl<'a> HR<'a> {
         Ok(())
     }
 
-    pub fn make_detective_core(&mut self)->Result<()>{
+    pub fn make_detective_core(&mut self) -> Result<()> {
         // let plugins = vec![
         // ];
         // TODO: migrate to mpl-core 0.10.0 doesn't work with anchor 0.31.0
