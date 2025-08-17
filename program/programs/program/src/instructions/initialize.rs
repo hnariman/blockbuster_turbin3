@@ -15,6 +15,9 @@ use anchor_spl::{
     },
     token::{mint_to, Mint, MintTo, Token, TokenAccount},
 };
+// use mpl_core::{
+//     instructions::CreateCollectionV1CpiBuilder,
+// };
 
 use crate::{Config, COLLECTION_MINT_SEED, CONF_SEED, MINT_SEED};
 
@@ -87,7 +90,8 @@ pub struct Initialize<'a> {
 impl<'a> Initialize<'a> {
     pub fn initialize(&mut self, bumps: &InitializeBumps) -> Result<()> {
         msg!("we're in and we're testing");
-
+        self.create_mint(bumps)?;
+        self.create_metadata(bumps)?;
         self.config.set_inner(Config {
             admin: self.admin.key(),
             reward_rate: 1u64,
