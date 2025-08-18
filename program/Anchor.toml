@@ -9,6 +9,9 @@ skip-lint = false
 [programs.localnet]
 blockbuster = "Lydq5FRq7WggPQeMjSPPDQCoeYXDCRTFrrtU79bYx8E"
 
+[programs.devnet]
+blockbuster = "Lydq5FRq7WggPQeMjSPPDQCoeYXDCRTFrrtU79bYx8E"
+
 [registry]
 url = "https://api.apr.dev"
 
@@ -17,4 +20,8 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
+# updated version which works
+# test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
+
+# default version, which doesn't work now:
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
