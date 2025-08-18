@@ -8,7 +8,7 @@ use anchor_spl::{
 use crate::{Config, CONF_SEED, MINT_SEED};
 
 #[derive(Accounts)]
-#[instruction(detective:Pubkey)]
+// #[instruction(detective:Pubkey)]
 pub struct Lock<'a> {
     #[account(mut)]
     pub admin: Signer<'a>,
