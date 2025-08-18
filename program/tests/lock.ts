@@ -10,7 +10,7 @@
 //     const admin = provider.wallet.publicKey;
 
 //     const config_seeds =
-//       [Buffer.from("blockbuster_config"), wallet.publicKey.toBuffer()];
+//       [Buffer.from(CONF_SEED), wallet.publicKey.toBuffer()];
 
 //     const [config, _config_bump] =
 //       PublicKey.findProgramAddressSync(config_seeds, program.programId);
