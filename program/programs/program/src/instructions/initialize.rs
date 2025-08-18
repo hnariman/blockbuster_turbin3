@@ -1,23 +1,13 @@
 use anchor_lang::prelude::*;
-
 use anchor_spl::{
     associated_token::AssociatedToken,
-    metadata::{
-        mpl_token_metadata::{
-            instructions::{
-                CreateMasterEditionV3Cpi, CreateMasterEditionV3CpiAccounts,
-                CreateMasterEditionV3InstructionArgs, CreateMetadataAccountV3Cpi,
-                CreateMetadataAccountV3CpiAccounts, CreateMetadataAccountV3InstructionArgs,
-            },
-            types::{CollectionDetails, Creator, DataV2},
-        },
-        Metadata,
-    },
-    token::{mint_to, Mint, MintTo, Token, TokenAccount},
+    token::{Mint, Token, TokenAccount},
 };
-// use mpl_core::{
-//     instructions::CreateCollectionV1CpiBuilder,
-// };
+
+use mpl_core::{
+    instructions::{CreateCollectionV1CpiBuilder, CreateV1CpiBuilder},
+    types::{Attribute, Attributes, DataState, PluginAuthorityPair},
+};
 
 use crate::{Config, COLLECTION_MINT_SEED, CONF_SEED, MINT_SEED};
 
@@ -38,7 +28,7 @@ pub struct Initialize<'a> {
     #[account(
         init,
         payer = admin,
-        mint::decimals = 6,
+        mint::decimals = 0,
         mint::authority = config,
         seeds = [MINT_SEED, config.key().as_ref()],
         bump
@@ -53,13 +43,14 @@ pub struct Initialize<'a> {
     )]
     pub vault: Account<'a, TokenAccount>,
 
+
+
     // NFT part
     #[account(
         init,
         payer = admin,
-        mint::decimals = 6,
+        mint::decimals = 0,
         mint::authority = config,
-        mint::freeze_authority = config,
         seeds = [COLLECTION_MINT_SEED, config.key().as_ref()],
         bump
     )]
@@ -81,17 +72,22 @@ pub struct Initialize<'a> {
     #[account(mut)]
     pub metadata: UncheckedAccount<'a>,
 
+    /// CHECK: This is the Collection Asset and will be checked by the Metaplex Core program
+    #[account(mut)]
+    pub collection: UncheckedAccount<'a>,
+
+    /// CHECK: This is the ID of the Metaplex Core program
+    #[account(address = mpl_core::ID)]
+    pub mpl_core_program: UncheckedAccount<'a>,
     pub system_program: Program<'a, System>,
     pub token_program: Program<'a, Token>,
     pub associated_token_program: Program<'a, AssociatedToken>,
-    pub metadata_program: Program<'a, Metadata>, // Metaplex program
 }
 
 impl<'a> Initialize<'a> {
     pub fn initialize(&mut self, bumps: &InitializeBumps) -> Result<()> {
         msg!("we're in and we're testing");
-        self.create_mint(bumps)?;
-        self.create_metadata(bumps)?;
+
         self.config.set_inner(Config {
             admin: self.admin.key(),
             reward_rate: 1u64,
@@ -102,105 +98,65 @@ impl<'a> Initialize<'a> {
             mint_bump: bumps.mint,
             collection_mint: self.collection_mint.key(),
         });
+        msg!("created config & it's data ");
+
+        self.mint_core(bumps)?;
+        msg!("mint core OK");
+        self.mint_core_collection(bumps)?;
         msg!("Initialization success!");
-        // self.create_mint();
         Ok(())
     }
 
-    pub fn create_mint(&mut self, bumps: &InitializeBumps) -> Result<()> {
-        let accounts = MintTo {
-            mint: self.collection_mint.to_account_info(),
-            to: self.collection_mint_ata.to_account_info(),
-            authority: self.config.to_account_info(),
-        };
-        let seeds = &[CONF_SEED, &self.admin.key().to_bytes(), &[bumps.config]];
+    pub fn mint_core(&mut self, bumps: &InitializeBumps) -> Result<()> {
+        let seeds = &[ 
+            CONF_SEED, 
+            self.admin.key.as_ref(), 
+            &[bumps.config] 
+            ];
         let signer_seeds = &[&seeds[..]];
 
-        let ctx = CpiContext::new_with_signer(
-            self.token_program.to_account_info(),
-            accounts,
-            signer_seeds,
-        );
-        mint_to(ctx, 1)
-    }
-
-    pub fn create_metadata(&mut self, bumps: &InitializeBumps) -> Result<()> {
-        // TODO: move to metaplex core to save compute units
-        let creator = vec![Creator {
-            address: self.config.key().clone(),
-            verified: true,
-            share: 100,
-        }];
-        let metadata = &self.metadata.to_account_info();
-        let mint = &self.mint.to_account_info();
-        let mint_authority = &self.config.to_account_info();
-        let payer = &self.admin.to_account_info();
-        let system_program = &self.system_program.to_account_info();
-        let spl_metadata_program = &self.metadata_program.to_account_info();
-        let update_authority = (&self.config.to_account_info(), false);
-
-        let spl_token_program = &self.token_program.to_account_info();
-        let master_edition = &self.master_edition.to_account_info();
-
-        let metadata_account = CreateMetadataAccountV3Cpi::new(
-            spl_metadata_program,
-            CreateMetadataAccountV3CpiAccounts {
-                metadata,
-                mint,
-                mint_authority,
-                payer,
-                update_authority,
-                system_program,
-                rent: None,
-            },
-            CreateMetadataAccountV3InstructionArgs {
-                data: DataV2 {
-                    name: "BBS".to_owned(),
-                    symbol: "BBS".to_owned(),
-                    uri: "".to_owned(),
-                    seller_fee_basis_points: 0,
-                    creators: Some(creator),
-                    collection: None,
-                    uses: None,
-                },
-                is_mutable: true,
-                collection_details: Some(CollectionDetails::V1 { size: 0 }),
-            },
-        );
-
-        let seeds = &[CONF_SEED, &self.admin.key().to_bytes(), &[bumps.config]];
-        let signer_seeds = &[&seeds[..]];
-
-        metadata_account.invoke_signed(signer_seeds)?;
-        msg!("Metadata Account created!");
-
-        let master_edition_account = CreateMasterEditionV3Cpi::new(
-            spl_metadata_program,
-            CreateMasterEditionV3CpiAccounts {
-                edition: master_edition,
-                update_authority: mint_authority,
-                mint_authority,
-                mint,
-                payer,
-                metadata,
-                token_program: spl_token_program,
-                system_program,
-                rent: None,
-            },
-            CreateMasterEditionV3InstructionArgs {
-                max_supply: Some(1),
-            },
-        );
-
-        master_edition_account.invoke_signed(signer_seeds)?;
-
-        msg!("Master Edition Account created");
+        CreateV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
+            .asset(&self.mint.to_account_info())
+            .collection(Some(&self.collection_mint.to_account_info()))
+            .authority(Some(&self.config.to_account_info()))
+            .payer(&self.admin.to_account_info())
+            .owner(Some(&self.admin.to_account_info()))
+            .update_authority(Some(&self.config.to_account_info()))
+            .system_program(&self.system_program.to_account_info())
+            .data_state(DataState::AccountState)
+            .name("The Badge".to_string())
+            .uri("https://myasset.com".to_string())
+            .plugins(vec![PluginAuthorityPair {
+                plugin: mpl_core::types::Plugin::Attributes(Attributes {
+                    attribute_list: vec![Attribute {
+                        key: "Ledger".to_string(),
+                        value: "NFT".to_string(),
+                    }],
+                }),
+                authority: None,
+            }])
+            .invoke_signed(signer_seeds)?;
 
         Ok(())
     }
 
-    // pub fn lock(&mut self) -> Result<()> {
-    //     self.config.locked = true;
-    //     Ok(())
-    // }
+    pub fn mint_core_collection(&mut self, bumps: &InitializeBumps) -> Result<()> {
+        let seeds = &[ 
+            CONF_SEED, 
+            self.admin.key.as_ref(), 
+            &[bumps.config] 
+            ];
+        let signer_seeds = &[&seeds[..]];
+
+        CreateCollectionV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
+            .collection(&self.collection.to_account_info())
+            .update_authority(Some(&self.config.to_account_info()))
+            .payer(&self.admin.to_account_info())
+            .system_program(&self.system_program.to_account_info())
+            .name("BB Legder Collection".to_string())
+            .uri("https://myasset.com".to_string())
+            .invoke_signed(signer_seeds)?;
+
+        Ok(())
+    }
 }
