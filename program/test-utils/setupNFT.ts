@@ -1,11 +1,19 @@
 import { Provider } from "@coral-xyz/anchor"
 import { Connection, Keypair } from "@solana/web3.js";
-import { TSetupNFT } from "./types";
+// import { TSetupNFT } from "./types";
 import { airDrop } from "./airdrop";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
 import { fromWeb3JsKeypair, toWeb3JsPublicKey } from "@metaplex-foundation/umi-web3js-adapters";
 import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import { Keypair as umiKeypair, KeypairSigner, Umi, keypairIdentity } from "@metaplex-foundation/umi";
+
+
+export type TSetupNFT = {
+  umi: Umi,
+  // nftMint: KeypairSigner,
+  // collectionMint: KeypairSigner,
+  creator: umiKeypair,
+}
 
 /**
  * @description 
@@ -27,8 +35,8 @@ export async function setupNFT(provider: Provider, connection: Connection): Prom
   const umi = createUmi(connection);
 
   // nft & collection are mutable accounts as they do pay
-  const nftMint = generateSigner(umi);
-  const collectionMint = generateSigner(umi);
+  // const nftMint = generateSigner(umi);
+  // const collectionMint = generateSigner(umi);
 
   // so they need some funds
   // await airDrop(provider, toWeb3JsPublicKey(nftMint.publicKey), 0.2);
@@ -46,8 +54,8 @@ export async function setupNFT(provider: Provider, connection: Connection): Prom
 
   return {
     umi,
-    nftMint,
-    collectionMint,
+    // nftMint,
+    // collectionMint,
     creator,
   }
 }

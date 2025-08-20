@@ -34,11 +34,5 @@ export interface DetectiveAccounts {
   associatedTokenProgram: PublicKey
 }
 
-export type TSetupNFT = {
-  umi: Umi,
-  nftMint: KeypairSigner,
-  collectionMint: KeypairSigner,
-  creator: umiKeypair,
-}
 
 

@@ -1,13 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Keypair, PublicKey, SendTransactionError, SystemProgram, } from "@solana/web3.js";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 // native nodejs
 import assert from "node:assert"
 
 // files:
-import { publicKey } from "@metaplex-foundation/umi";
-import { findMasterEditionPda, findMetadataPda, MPL_TOKEN_METADATA_PROGRAM_ID, verifySizedCollectionItem } from "@metaplex-foundation/mpl-token-metadata";
+import { keypairIdentity, publicKey } from "@metaplex-foundation/umi";
+import { MPL_TOKEN_METADATA_PROGRAM_ID, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { setupInitialize } from "../test-utils/setupInitialize";
 import { logTransactionURL } from "../test-utils/log";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
@@ -16,26 +16,50 @@ import { Program } from "@coral-xyz/anchor";
 import { Blockbuster } from "../target/types/blockbuster";
 import { setupNFT } from "../test-utils/setupNFT";
 import { MPL_CORE_PROGRAM_ID } from "@metaplex-foundation/mpl-core";
+import { COLLECTION_MINT_SEED, CONF_SEED, MINT_SEED } from "../test-utils/const";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
 
 anchor.setProvider(anchor.AnchorProvider.env());
 const program = anchor.workspace.Blockbuster as Program<Blockbuster>;
 const provider = anchor.getProvider();
-const admin = provider.wallet as NodeWallet;
 const connection = new anchor.web3.Connection(provider.connection.rpcEndpoint, "finalized");
 
-const { config, mint, vault, collectionMint, collectionMintATA } = setupInitialize()
+// const { config, mint, vault, collectionMint, collectionMintATA } = setupInitialize()
+
+// const { program, provider, wallet: admin } = setup();
+
+
 describe("Initialize", () => {
-  let metadata;
-  let masterEdition;
-  let collection: PublicKey;
+  const admin = provider.wallet as NodeWallet;
 
-  before(async () => { 
-    const { umi } = await setupNFT(provider, connection);
+  const config = PublicKey.findProgramAddressSync(
+    [Buffer.from(CONF_SEED), admin.payer.publicKey.toBuffer()], program.programId)[0];
 
-    metadata = findMetadataPda(umi, { mint: publicKey(collectionMint) })[0];
-    masterEdition = findMasterEditionPda(umi, { mint: publicKey(collectionMint) })[0];
-    collection = metadata;
+  const mint = PublicKey.findProgramAddressSync(
+    [Buffer.from(MINT_SEED), config.toBuffer()], program.programId)[0];
 
+  const vault = getAssociatedTokenAddressSync(mint, config, true);
+
+  const collectionMint = PublicKey.findProgramAddressSync(
+    [Buffer.from(COLLECTION_MINT_SEED), config.toBuffer()], program.programId)[0];
+
+  const collectionMintATA = getAssociatedTokenAddressSync(collectionMint, config, true);
+
+  const masterEdition = PublicKey.findProgramAddressSync(
+    [Buffer.from(CONF_SEED), admin.payer.publicKey.toBuffer()], SystemProgram.programId)[0]
+
+  const metadata = PublicKey.findProgramAddressSync(
+    [Buffer.from(CONF_SEED), admin.payer.publicKey.toBuffer()], SystemProgram.programId)[0];
+
+  const collection = metadata;
+
+  console.log({ metadata, masterEdition })
+
+  before(async () => {
+    const umi = createUmi(connection);
+    umi.use(keypairIdentity(fromWeb3JsKeypair(admin.payer)));
+    umi.use(mplTokenMetadata());
     console.log(`created NFT Collection with UMI: ${collectionMint.toString()}`)
   })
 
@@ -59,7 +83,6 @@ describe("Initialize", () => {
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         metadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-
       };
 
       console.log('calling init', { config });
@@ -88,7 +111,7 @@ describe("Initialize", () => {
 
   it("Admin shall be able to lock protocol", async () => {
     try {
-      let { admin, program, config, mint, vault } = await setupInitialize();
+      let { admin, program, config, mint, vault } = setupInitialize();
       const confAccount = await program.account.config.fetch(config);
 
       const tx = await program.methods
@@ -111,7 +134,7 @@ describe("Initialize", () => {
   it("Non-Admin shall not be able to lock protocol", async () => {
     const nonAdmin = Keypair.generate();
     try {
-      let { config, program, provider, admin } = await setupInitialize();
+      let { config, program, provider, admin } = setupInitialize();
 
       await program.methods
         .lock()
@@ -127,7 +150,7 @@ describe("Initialize", () => {
   });
 
   it("Admin shall be able to unlock protocol", async () => {
-    let { config, program, provider, admin } = await setupInitialize();
+    let { config, program, provider, admin } = setupInitialize();
     try {
       await program.methods
         .lock()
@@ -141,7 +164,7 @@ describe("Initialize", () => {
 
   it("Non-admin: shall not be able to unlock protocol", async () => {
     const nonAdmin = Keypair.generate();
-    let { config, program } = await setupInitialize();
+    let { config, program } = setupInitialize();
 
     try {
 
