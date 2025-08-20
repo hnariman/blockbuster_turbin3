@@ -1,3 +1,5 @@
+use std::vec;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -28,7 +30,7 @@ pub struct Initialize<'a> {
     #[account(
         init,
         payer = admin,
-        mint::decimals = 0,
+        mint::decimals = 6,
         mint::authority = config,
         seeds = [MINT_SEED, config.key().as_ref()],
         bump
@@ -43,13 +45,11 @@ pub struct Initialize<'a> {
     )]
     pub vault: Account<'a, TokenAccount>,
 
-
-
     // NFT part
     #[account(
         init,
         payer = admin,
-        mint::decimals = 0,
+        mint::decimals = 6,
         mint::authority = config,
         seeds = [COLLECTION_MINT_SEED, config.key().as_ref()],
         bump
@@ -108,11 +108,17 @@ impl<'a> Initialize<'a> {
     }
 
     pub fn mint_core(&mut self, bumps: &InitializeBumps) -> Result<()> {
-        let seeds = &[ 
-            CONF_SEED, 
-            self.admin.key.as_ref(), 
-            &[bumps.config] 
-            ];
+        let plugins = vec![PluginAuthorityPair {
+            plugin: mpl_core::types::Plugin::Attributes(Attributes {
+                attribute_list: vec![Attribute {
+                    key: "Ledger".to_string(),
+                    value: "NFT".to_string(),
+                }],
+            }),
+            authority: None,
+        }];
+
+        let seeds = &[CONF_SEED, self.admin.key.as_ref(), &[bumps.config]];
         let signer_seeds = &[&seeds[..]];
 
         CreateV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
@@ -121,36 +127,24 @@ impl<'a> Initialize<'a> {
             .authority(Some(&self.config.to_account_info()))
             .payer(&self.admin.to_account_info())
             .owner(Some(&self.admin.to_account_info()))
-            .update_authority(Some(&self.config.to_account_info()))
+            .update_authority(None /* Some(&self.config.to_account_info()) */)
             .system_program(&self.system_program.to_account_info())
             .data_state(DataState::AccountState)
             .name("The Badge".to_string())
             .uri("https://myasset.com".to_string())
-            .plugins(vec![PluginAuthorityPair {
-                plugin: mpl_core::types::Plugin::Attributes(Attributes {
-                    attribute_list: vec![Attribute {
-                        key: "Ledger".to_string(),
-                        value: "NFT".to_string(),
-                    }],
-                }),
-                authority: None,
-            }])
+            .plugins(plugins)
             .invoke_signed(signer_seeds)?;
 
         Ok(())
     }
 
     pub fn mint_core_collection(&mut self, bumps: &InitializeBumps) -> Result<()> {
-        let seeds = &[ 
-            CONF_SEED, 
-            self.admin.key.as_ref(), 
-            &[bumps.config] 
-            ];
+        let seeds = &[CONF_SEED, self.admin.key.as_ref(), &[bumps.config]];
         let signer_seeds = &[&seeds[..]];
 
         CreateCollectionV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
             .collection(&self.collection.to_account_info())
-            .update_authority(Some(&self.config.to_account_info()))
+            .update_authority(None /* Some(&self.config.to_account_info()) */)
             .payer(&self.admin.to_account_info())
             .system_program(&self.system_program.to_account_info())
             .name("BB Legder Collection".to_string())
